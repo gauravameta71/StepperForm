@@ -1,9 +1,30 @@
 import NavButtons from "@/components/FormInputs/NavButtons";
-import React from "react";
+import React, { useRef } from "react";
 import { useSelector } from "react-redux";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function FormConfirmation() {
   const formData = useSelector((store) => store.onboarding.formData);
+    const formRef = useRef(null);
+
+    const handleDownloadPdf = () => {
+      // Select the form element and its content
+      const form = formRef.current;
+      if (!form) return; // Ensure the form reference exists
+      const formContent = form.cloneNode(true);
+
+      // Create a new jsPDF instance
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      // Convert form content to canvas and add to PDF
+      html2canvas(formContent).then((canvas) => {
+        const imgData = canvas.toDataURL("image/png");
+        pdf.addImage(imgData, "PNG", 0, 0, 210, 297); // A4 size: 210 x 297 mm
+        pdf.save("form_data.pdf"); // Save PDF with a specific filename
+      });
+    };
+
   async function processData(data) {
     console.log(formData);
   }
@@ -13,14 +34,14 @@ export default function FormConfirmation() {
       <h2 className="text-2xl font-bold text-gray-800 mb-4">
         Confirm and Submit Data
       </h2>
-      <form onSubmit={processData}>
+      <form onSubmit={processData} ref={formRef}>
         <div className="max-h-[580px] overflow-y-auto">
           <div className="grid grid-cols-2 gap-6 ">
             <div className="mb-6 col-span-2 flex justify-center items-center mt-6">
               <img
                 src={formData.profileImage}
                 alt="Uploaded Image"
-                className="max-w-full h-auto"
+                className="w-40 h-36 rounded-full"
               />
             </div>
             <div className="flex flex-col  mb-6 ">
@@ -136,6 +157,9 @@ export default function FormConfirmation() {
       </form>
       <div className="mt-18">
         <NavButtons />
+        {/* <button onClick={handleDownloadPdf} className="btn btn-primary">
+          Download PDF
+        </button> */}
       </div>
     </div>
   );

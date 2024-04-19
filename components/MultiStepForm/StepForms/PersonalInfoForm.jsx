@@ -11,11 +11,18 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 
+// file
+
+ 
+
 export default function PersonalInfoForm() {
   const currentStep = useSelector((store) => store.onboarding.currentStep);
   const formData = useSelector((store) => store.onboarding.formData);
   console.log(formData, currentStep);
   const [loading, setLoading] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+
   const gender = [
     {
       id: "male",
@@ -36,16 +43,32 @@ export default function PersonalInfoForm() {
     },
   });
   const dispatch = useDispatch();
-  
-  const [profileImage, setProfileImage] = useState(null);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    const newFormData = {
-      ...formData,
-      profileImage: file, // Include the uploaded file in the form data
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      // FileReader has read the file successfully
+      const base64Data = reader.result;
+      setProfileImage(base64Data);
+
+      const newFormData = {
+        ...formData,
+        profileImage: base64Data, // Include the uploaded file in the form data
+      };
+
+      // Dispatch the updated form data after the file is read and converted
+      dispatch(updateFormData(newFormData));
     };
-    dispatch(updateFormData(newFormData)); // Dispatch the updated form data
+
+    // Read the file as a data URL (base64 encoded)
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadButtonClick = () => {
+    document.getElementById("file_input").click();
   };
 
   async function processData(data) {
@@ -68,25 +91,20 @@ export default function PersonalInfoForm() {
         <p>Please provide your name, email address, and phone number.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
-        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="file_input">
-          Upload Image
-        </label>
-        <input
-          className="block w-full text-sm text-gray-900 border border-gray-300 rounded-full cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-          id="file_input"
-          type="file"
-          required
-          name="profileImage"
-          onChange={handleFileChange}
-        />
-        
+        <div>
+          <label htmlFor="file_input">Upload Image</label>
+          <input type="file" id="file_input"  onChange={handleFileChange} />
+          <button onClick={handleUploadButtonClick}>Select Image</button>
+          {selectedFile && <p>Selected file: {selectedFile.name}</p>}
+        </div>
+
         <TextInput
           label="Full Name"
           name="fullName"
           register={register}
           errors={errors}
         />
-         <TextInput
+        <TextInput
           label="Email Address"
           name="email"
           type="email"
@@ -126,7 +144,7 @@ export default function PersonalInfoForm() {
           errors={errors}
         />
       </div>
-      
+
       <NavButtons />
     </form>
   );
